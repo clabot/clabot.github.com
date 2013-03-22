@@ -1,0 +1,232 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>clabot by clabot</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>clabot</h1>
+        <p>A bot to take the pain out of Contributor License Agreements</p>
+
+
+        <p class="view"><a href="https://github.com/clabot">View My GitHub Profile</a></p>
+
+      </header>
+      <section>
+        <p><img src="http://en.gravatar.com/userimage/20257526/bb65aa5c4ec93b91c4a2c620d2181d3d.png?size=256" alt="clabot"></p>
+
+<p>clabot <strong>automatically answers Pull Requests</strong> submitted to your repository. If the sender hasn't signed the agreement yet he <strong>replies with instructions</strong>, otherwise the maintainer will be notified.</p>
+
+<p><img src="http://i.imgur.com/x9ovPJ7.gif" alt="post fancy gifs like it's 1995"></p>
+
+<p><strong>The bot is fully customizeable:</strong></p>
+
+<ul>
+<li>Hook any API into the <code>getContractors</code> mechanism.</li>
+<li>Provide templates to adapt clabot's comments to your needs</li>
+<li>Flags to ignore pull requests from collaborators or people who have already contributed</li>
+</ul><p>You can even trigger clabot manually with a <strong>special comment API</strong>. Reply with <code>[clabot:check]</code> to any pull request and you'll instantly see wether the sender has signed or not.</p>
+
+<p>This dramatically <strong>reduces the time investement</strong> needed to establish a strict contribution policy for your projects.</p>
+
+<p><strong>The focus of this project lies on communication automation:</strong></p>
+
+<ul>
+<li>No more painful begging for replies</li>
+<li>No more hours of processing the pull request queue</li>
+<li>No more manually checking the contractor database</li>
+</ul><p>The bot is written in coffeescript, running on node.js. Due to <a href="http://developer.github.com/v3/repos/hooks/#pubsubhubbub">pubsubhubhub</a> and GitHub's live updates answers will appear almost instantly.</p>
+
+<h2>Try it out</h2>
+
+<p>Feel free to open pull requests in our <a href="http://github.com/clabot/sandbox">sandbox</a> environment.
+Experience how clabot automatically responds, guiding you through the process of signing a Contributors License Agreement.
+<em>Note:</em> If you don't want to go through the hassle of forking the repo just reply <code>[clabot:check]</code> to any of the pull requests.
+You can use <code>[clabot:check=yourusername]</code> to check your own status.</p>
+
+<h2>Getting Your Own</h2>
+
+<p><strong>You'll probably never have to hack on this repo directly.</strong></p>
+
+<p>Instead this repo provides a library that's distributed by npm that you simply require in your project. Follow the instructions below and get your own hubot ready to deploy.</p>
+
+<p>We have set up a <a href="http://github.com/clabot/sample">sample implementation</a>. You can find a lengthy tutorial there on how to deploy your very own clabot to heroku.</p>
+
+<h2>clabot API</h2>
+
+<p>clabot is available on the npm registry.</p>
+
+<div class="highlight"><pre>npm install clabot
+</pre></div>
+
+<p>You require clabot and call <code>clabot.createApp(options)</code>. This will return a new <a href="http://expressjs.com">express.js</a> app.
+Based on the options provided this already sets up some clabot specific routes and middlewares.</p>
+
+<p>All you have to do is listen to a port and clabot will be up and running.</p>
+
+<div class="highlight"><pre><span class="nx">app</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'clabot'</span><span class="p">).</span><span class="nx">createApp</span><span class="p">(</span><span class="nx">options</span><span class="p">);</span>
+<span class="nx">app</span><span class="p">.</span><span class="nx">listen</span><span class="p">(</span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">PORT</span> <span class="o">||</span> <span class="mi">1337</span><span class="p">);</span>
+</pre></div>
+
+<p>In order to receive events from GitHub you have to subscribe.
+clabot will never push code to the repositories, but push access is required to be able to receive events from the GitHub API.</p>
+
+<div class="highlight"><pre>curl -u <span class="s2">"clabotusername"</span> -i https://api.github.com/hub -F <span class="s2">"hub.mode=subscribe"</span> -F <span class="s2">"hub.topic=https://github.com/:user/:repo/events/pull_request"</span> -F <span class="s2">"hub.callback=http://your-clabot.herokuapp.com/notify"</span> -F <span class="s2">"hub.secret=supersecretrandomstring"</span>
+
+curl -u <span class="s2">"clabotusername"</span> -i https://api.github.com/hub -F <span class="s2">"hub.mode=subscribe"</span> -F <span class="s2">"hub.topic=https://github.com/:user/:repo/events/issue_comment"</span> -F <span class="s2">"hub.callback=http://your-clabot.herokuapp.com/notify"</span> -F <span class="s2">"hub.secret=supersecretrandomstring"</span>
+</pre></div>
+
+<p><em>Note:</em> You have to do both of the commands for every repository that should be observed. One command for pull requests and one for comments on those.</p>
+
+<p><a href="http://developer.github.com/v3/repos/hooks/#pubsubhubbub">http://developer.github.com/v3/repos/hooks/#pubsubhubbub</a></p>
+
+<h3>Options</h3>
+
+<h4>getContractors(callback)</h4>
+
+<p>Type: <code>Function</code></p>
+
+<p><em>required</em></p>
+
+<p>This function will be called by clabot in case he needs a list of all signed contractors.
+Provide a function here that queries your database and calls the callback with an array of GitHub usernames.</p>
+
+<h4>token</h4>
+
+<p>Type: <code>String</code></p>
+
+<p><em>required</em></p>
+
+<p>A valid GitHub oAuth token with access to all repositories that clabot should observe.</p>
+
+<p><em>Note:</em> It's highly recommended that you <strong>don't commit the token to your repository</strong>. Use environment variables.</p>
+
+<p><em>Note:</em> It's highly recommended that you <strong>create a sperate GitHub account for your clabot</strong>.</p>
+
+<div class="highlight"><pre>curl -u <span class="s1">'clabotusername'</span> -d <span class="s1">'{"scopes":["repo"],"note":"clabot"}'</span> https://api.github.com/authorizations
+</pre></div>
+
+<p><a href="https://help.github.com/articles/creating-an-oauth-token-for-command-line-use">Creating an OAuth token for command-line use</a></p>
+
+<h4>templates</h4>
+
+<p>Type: <code>Object</code></p>
+
+<p><em>optional</em></p>
+
+<p>clabot provides pretty cool standard templates, but if they don't fit your needs you can specify custom ones.
+The object may specify: <code>alreadySigned</code> and <code>notYetSigned</code>. You should have a look at the <a href="src/templates">originals</a>.
+<em>Note:</em> Templates are processed by <a href="http://lodash.com">lodash's</a> <code>_.template</code></p>
+
+<h4>templateData</h4>
+
+<p>Type: <code>Object</code></p>
+
+<p>Specify details displayed in clabot's answers. You may specify any data you like, so you can access it in your custom templates
+.</p>
+
+<ul>
+<li>"image": 'Boolean' show funny gifs in the response</li>
+<li>"link": 'String' link to your electronical submission form</li>
+<li>"maintainer": 'String' GitHub username to be notified, if CLA was signed</li>
+</ul><h4>secrets</h4>
+
+<p>Type: <code>Object</code></p>
+
+<p><em>required</em></p>
+
+<p>The secrets you provided when subscribing to GitHub's events. Organized in a user/repo way so you can vary secrets on a per repo basis.</p>
+
+<div class="highlight"><pre><span class="nx">secrets</span><span class="o">:</span> <span class="p">{</span>
+  <span class="nx">username</span><span class="o">:</span>
+    <span class="nx">reponame</span><span class="o">:</span> <span class="s1">'secret1'</span>
+    <span class="nx">reponame2</span><span class="o">:</span> <span class="s1">'secret2'</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><em>Note:</em> It's highly recommended that you <strong>don't commit secrets to your repository</strong>. Use environment variables.</p>
+
+<h4>skipCollaborators</h4>
+
+<p>Type: <code>Boolean</code></p>
+
+<p>Default: false</p>
+
+<p>Don't answer to pull request from people with push access to the repository.</p>
+
+<h4>skipContributors</h4>
+
+<p>Type: <code>Boolean</code></p>
+
+<p>Default: true</p>
+
+<p>Don't answer to pull request from people who have already contributed to the repository.</p>
+
+<h2>Misc &amp; Attributions</h2>
+
+<p><strong>Don't know what the whole CLA thing is about?</strong></p>
+
+<blockquote>
+<p>The purpose of a CLA is to ensure that the guardian of a project's outputs has the necessary ownership or grants of rights over all contributions to allow them to distribute under the chosen licence.
+<a href="http://en.wikipedia.org/wiki/Contributor_License_Agreement">Wikipedia</a></p>
+</blockquote>
+
+<p><strong>Need a Contributor License Agreement template?</strong></p>
+
+<blockquote>
+<p>Project Harmony is a community-centered group focused on contributor agreements for free and open source software (FOSS) <a href="http://www.harmonyagreements.org/index.html">Project Harmony</a></p>
+</blockquote>
+
+<p><strong>Wanna hang out and chat about clabot?</strong></p>
+
+<p><a href="https://www.hipchat.com/gBZFBJa2w">Join our HipChat room</a></p>
+
+<p><strong>clabot is <a href="LICENSE">MIT licensed</a>. In case you forgot about the most important part of it:</strong></p>
+
+<blockquote>
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.</p>
+</blockquote>
+
+<p>We aren't lawyers, and none of the clabot documentation, functionality, or other communication constitutes legal advice. Consult your lawyer about a Contributor License Agreement.</p>
+
+<hr><p>authored by <strong><a href="https://github.com/boennemann">Stephan Bönnemann</a> - <a href="https://twitter.com/boennemann">@boennemann</a></strong></p>
+
+<p>maintained by <a href="https://github.com/excellenteasy">excellenteasy</a></p>
+
+<p>clabot logo by <a href="http://www.proycontec.es/proycontec-3-iconos-gratis-index-es.html">Proycontec SL.</a> <a href="http://creativecommons.org/licenses/by-sa/3.0/us/">Creative Commons Attribution-Share Alike 3.0</a></p>
+      </section>
+      <footer>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-39519722-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
