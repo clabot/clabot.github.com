@@ -1,0 +1,8 @@
+{
+  "name": "iscroll-gh-pages",
+  "version": "0.0.0",
+  "devDependencies": {
+    "lodash": "~1.0.1",
+    "marked": "~0.2.8"
+  }
+}

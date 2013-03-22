@@ -1,0 +1,15 @@
+#!/usr/bin/env node
+var md = require("marked");
+var fs = require("fs");
+var _  = require("lodash");
+
+var template   = _.template(fs.readFileSync("src/template.html").toString());
+var entity     = fs.readFileSync("src/CLA-Entity.md").toString();
+var individual = fs.readFileSync("src/CLA-Individual.md").toString();
+
+fs.writeFileSync("./entity.html", template({
+  content: md(entity)
+}));
+fs.writeFileSync("./index.html", template({
+  content: md(individual)
+}));
